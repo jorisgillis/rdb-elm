@@ -1,0 +1,22 @@
+.crud {
+    clear: left;
+    padding-bottom: 15px;
+}
+
+.grid-item {
+    width: 300px;
+    float: left;
+    padding: 4px;
+}
+
+.grid-item--width2 {
+    width: 600px;
+}
+
+.row {
+    padding-bottom: 7px;
+}
+
+.align-right {
+    float: right
+}
