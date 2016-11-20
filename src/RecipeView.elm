@@ -1,6 +1,6 @@
 module RecipeView exposing (..)
 
-import Html exposing (Html, div, p, h2, h5, text, form, input, textarea, button)
+import Html exposing (Html, div, p, h2, h3, h5, text, form, input, textarea, button)
 import Html.Attributes exposing (class, type', value, name, href)
 import Html.Events exposing (onClick, onInput)
 import Http
@@ -10,6 +10,11 @@ import Routing
 import Json.Decode exposing ((:=))
 import RecipeModel as RecipeModel exposing (..)
 import ErrorHandling exposing (errorToString, showError)
+import Material
+import Material.Button as Button
+import Material.Card as Card
+import Material.Color as Color
+import Material.Options exposing (cs)
 
 
 type Msg
@@ -19,52 +24,42 @@ type Msg
     | DeleteFailure Http.Error
     | DeleteSuccess
     | UpdateRecipe
+    | Mdl (Material.Msg Msg)
 
 
 view : RecipeModel -> Html Msg
 view model =
     div []
         [ showError model.error
-        , showRecipe model.recipe
+        , showRecipe model
         ]
 
 
-showRecipe : Recipe -> Html Msg
-showRecipe recipe =
-    div [ class "row" ]
-        [ div [ class "row" ]
-            [ div
-                [ class "col-sm-2" ]
-                [ button
-                    [ href ""
-                    , class "btn btn-sm btn-primary"
-                    , onClick UpdateRecipe
-                    ]
-                    [ text "Update recipe" ]
-                ]
-            , div
-                [ class "col-sm-2" ]
-                [ button
-                    [ href ""
-                    , class "btn btn-sm btn-danger"
-                    , onClick DeleteRecipe
-                    ]
-                    [ text "Delete recipe" ]
-                ]
+showRecipe : RecipeModel -> Html Msg
+showRecipe model =
+    div []
+        [ h3
+            [ class "recipe-title" ]
+            [ text model.recipe.name ]
+        , p
+            []
+            [ text model.recipe.description ]
+        , Button.render Mdl
+            [ 0 ]
+            model.mdl
+            [ Button.ripple
+            , Button.raised
+            , Button.onClick UpdateRecipe
             ]
-        , div
-            [ class "row" ]
-            [ div [ class "col-sm-12" ]
-                [ div [ class "panel panel-default" ]
-                    [ div [ class "panel-heading" ]
-                        [ div [ class "panel-title" ]
-                            [ text recipe.name ]
-                        ]
-                    , div [ class "panel-body" ]
-                        [ text recipe.description ]
-                    ]
-                ]
+            [ text "Update Recipe" ]
+        , Button.render Mdl
+            [ 1 ]
+            model.mdl
+            [ Button.ripple
+            , Button.raised
+            , Button.onClick DeleteRecipe
             ]
+            [ text "Delete Recipe" ]
         ]
 
 
@@ -108,6 +103,9 @@ update msg model =
                             )
             in
                 ( model, cmd )
+
+        Mdl msg' ->
+            Material.update msg' model
 
 
 fetchRecipe : RecipeId -> Cmd Msg

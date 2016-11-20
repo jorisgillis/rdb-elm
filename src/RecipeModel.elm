@@ -1,7 +1,7 @@
 module RecipeModel exposing (..)
 
 import Json.Decode as Decode exposing ((:=))
-
+import Material
 
 type alias RecipeId =
     Int
@@ -21,7 +21,6 @@ newRecipe =
     , description = ""
     }
 
-
 recipeDecoder : Decode.Decoder Recipe
 recipeDecoder =
     Decode.object3 Recipe
@@ -33,17 +32,18 @@ recipeDecoder =
 type alias RecipeModel =
     { recipe : Recipe
     , error : Maybe String
+    , mdl : Material.Model
     }
 
 
 initialModel : RecipeModel
 initialModel =
-    RecipeModel newRecipe Nothing
+    RecipeModel newRecipe Nothing Material.model
 
 
 createNewModel : RecipeModel
 createNewModel =
-    RecipeModel newRecipe Nothing
+    RecipeModel newRecipe Nothing Material.model
 
 
 baseRecipeUrl : String

@@ -1,16 +1,26 @@
+h2.page-header {
+    font-size: 16pt;
+    font-weight: bold;
+}
+
+h3.recipe-title {
+    font-size: 15pt;
+    font-weight: bold;
+}
+
 .crud {
     clear: left;
     padding-bottom: 15px;
 }
 
 .grid-item {
-    width: 300px;
+    width: 350px;
     float: left;
     padding: 4px;
 }
 
 .grid-item--width2 {
-    width: 600px;
+    width: 700px;
 }
 
 .row {
@@ -19,4 +29,37 @@
 
 .align-right {
     float: right
+}
+
+.mdl-layout__header {
+    background-color: #339933;
+}
+
+.mdl-layout__tab-bar {
+    background-color: #33AA33;
+}
+
+.mdl-layout__tab-bar-button {
+    background-color: #33AA33;
+}
+
+.mdl-card {
+    width: 350px;
+    background-color: #33AA33;
+}
+
+.recipe-card {
+    width: 800px;
+}
+
+.mdl-card__title {
+    background-color: #33AA33;
+}
+
+.mdl-card__supporting-text {
+    background-color: #c8ff90;
+}
+
+.mdl-button--colored {
+    background-color: #44BB44 !important;
 }

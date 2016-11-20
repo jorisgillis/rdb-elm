@@ -1,12 +1,14 @@
 module App exposing (..)
 
-import Html exposing (Html, div, text, ul, li, p, a)
+import Html exposing (Html, div, text, ul, li, p, a, h1)
 import Html.App
-import Html.Attributes exposing (class)
+import Html.Attributes exposing (class, style)
 import Html.Events exposing (onClick)
 import String
 import Navigation exposing (program)
 import UrlParser exposing (Parser, (</>), format, int, oneOf, s, string)
+import Material
+import Material.Layout as Layout
 import Routing exposing (..)
 import RecipeList
 import RecipeView
@@ -18,6 +20,7 @@ type alias Model =
     { recipes : RecipeList.Model
     , recipe : RecipeModel
     , route : Page
+    , mdl : Material.Model
     }
 
 
@@ -31,6 +34,7 @@ initialModel =
     { recipes = RecipeList.initialModel
     , recipe = RecipeModel.initialModel
     , route = Home
+    , mdl = Material.model
     }
 
 
@@ -39,15 +43,23 @@ type Msg
     | RecipeViewMsg RecipeView.Msg
     | RecipeEditMsg RecipeEdit.Msg
     | GoHome
+    | Mdl (Material.Msg Msg)
+    | SelectTab Int
 
 
 view : Model -> Html Msg
 view model =
-    div []
-        [ showNavigation
-        , div [ class "container" ]
-            [ loadPage model ]
+    Layout.render Mdl
+        model.mdl
+        [ Layout.fixedHeader
+        , Layout.onSelectTab SelectTab
         ]
+        { header = [ h1 [ style [ ( "padding-left", "20px" ) ] ] [ text "RecipeDB" ] ]
+        , drawer = []
+        , tabs = ( [ text "Home", text "Add Recipe" ], [] )
+        , main =
+            [ loadPage model ]
+        }
 
 
 loadPage : Model -> Html Msg
@@ -104,6 +116,20 @@ update msg model =
 
         GoHome ->
             ( model, Navigation.newUrl (Routing.toHash Routing.Home) )
+
+        Mdl msg' ->
+            Material.update msg' model
+
+        SelectTab num ->
+            case num of
+                0 ->
+                    ( model, Navigation.newUrl (Routing.toHash Routing.Home) )
+
+                1 ->
+                    ( model, Navigation.newUrl (Routing.toHash Routing.RecipeCreate) )
+
+                _ ->
+                    ( model, Navigation.newUrl (Routing.toHash Routing.Home) )
 
 
 urlUpdate : Result String Page -> Model -> ( Model, Cmd Msg )

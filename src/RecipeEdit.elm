@@ -36,6 +36,9 @@ import Json.Decode exposing ((:=))
 import Json.Encode as JSE
 import RecipeModel as RecipeModel exposing (..)
 import ErrorHandling exposing (errorToString, showError)
+import Material
+import Material.Button as Button
+import Material.Textfield as Textfield
 
 
 type Msg
@@ -47,91 +50,92 @@ type Msg
     | UpdateSuccess
     | CreateFailure Http.Error
     | CreateSuccess RecipeId
+    | Mdl (Material.Msg Msg)
 
 
 view : RecipeModel -> Html Msg
 view model =
     div []
         [ showError model.error
-        , showForm model.recipe
+        , showForm model
         ]
 
 
-showForm : Recipe -> Html Msg
-showForm recipe =
-    div [ class "row" ]
-        [ div [ class "col-sm-12" ]
-            [ div [ class "panel panel-primary" ]
-                [ div [ class "panel-heading" ]
-                    [ div [ class "panel-title" ]
-                        [ text "Edit recipe" ]
-                    ]
-                , div [ class "panel-body" ]
-                    [ recipeForm recipe ]
-                ]
-            ]
+showForm : RecipeModel -> Html Msg
+showForm model =
+    div []
+        [ h2
+            [ class "page-header" ]
+            [ text "Edit recipe" ]
+        , div
+            [ class "panel-body" ]
+            [ recipeForm model ]
         ]
 
 
-recipeForm : Recipe -> Html Msg
-recipeForm recipe =
+recipeForm : RecipeModel -> Html Msg
+recipeForm model =
     form []
         [ div
             [ class "row" ]
-            [ div
-                [ class "col-sm-2" ]
-                [ strong [] [ text "Name" ] ]
-            , div
-                [ class "col-sm-10" ]
-                [ input
-                    [ type' "text"
-                    , value recipe.name
-                    , placeholder "Recipe name"
-                    , size 71
-                    , onInput UpdateName
-                    ]
-                    []
+            [ Textfield.render Mdl
+                [ 0 ]
+                model.mdl
+                [ Textfield.label "Name"
+                , Textfield.floatingLabel
+                , Textfield.text'
+                , Textfield.value model.recipe.name
+                , Textfield.onInput UpdateName
                 ]
             ]
         , div
             [ class "row" ]
-            [ div
-                [ class "col-sm-2" ]
-                [ strong [] [ text "Description" ] ]
-            , div
-                [ class "col-sm-10" ]
-                [ textarea
-                    [ name "description"
-                    , placeholder "Description"
-                    , cols 70
-                    , rows 10
-                    , method "POST"
-                    , onInput UpdateDescription
-                    ]
-                    [ text recipe.description ]
+            [ Textfield.render Mdl
+                [ 1 ]
+                model.mdl
+                [ Textfield.label "Description"
+                , Textfield.floatingLabel
+                , Textfield.textarea
+                , Textfield.rows 6
+                , Textfield.value model.recipe.description
+                , Textfield.onInput UpdateDescription
                 ]
             ]
         , div
             [ class "row" ]
-            [ div
-                [ class "col-sm-2" ]
-                [ div
-                    [ href ""
-                    , class "btn btn-sm btn-primary align-right"
-                    , onClick PersistRecipe
-                    ]
-                    [ text "Save" ]
+            [ Button.render Mdl
+                [ 2 ]
+                model.mdl
+                [ Button.raised
+                , Button.ripple
+                , Button.onClick Cancel
                 ]
-            , div
-                [ class "col-sm-2" ]
-                [ div
-                    [ href ""
-                    , class "btn btn-sm btn-primary"
-                    , onClick Cancel
-                    ]
-                    [ text "Cancel" ]
+                [ text "Cancel" ]
+            , Button.render Mdl
+                [ 3 ]
+                model.mdl
+                [ Button.raised
+                , Button.ripple
+                , Button.onClick PersistRecipe
                 ]
+                [ text "Save" ]
             ]
+          --         [ href ""
+          --         , class "btn btn-sm btn-primary align-right"
+          --         , onClick PersistRecipe
+          --         ]
+          --         [ text "Save" ]
+          --     ]
+          -- , div
+          --     [ class "col-sm-2" ]
+          --     [ div
+          --         [ href ""
+          --         , class "btn btn-sm btn-primary"
+          --         , onClick Cancel
+          --         ]
+          --         [ text "Cancel" ]
+          --     ]
+          -- ]
         ]
 
 
@@ -187,6 +191,9 @@ update msg model =
                     { recipe | id = Just id }
             in
                 ( { model | recipe = newRecipe, error = Nothing }, toHome )
+
+        Mdl msg' ->
+            Material.update msg' model
 
 
 toRecipeOrHome recipe =
