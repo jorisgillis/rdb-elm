@@ -7,6 +7,11 @@ import Html exposing (..)
 import Html.Attributes exposing (class, id, href)
 import Html.Events exposing (onClick)
 import Navigation
+import Material
+import Material.Button as Button
+import Material.Card as Card
+import Material.Options exposing (css)
+import Material.Color as Color
 import RecipeModel exposing (RecipeId, Recipe, recipeDecoder)
 import Routing
 import ErrorHandling exposing (errorToString, showError)
@@ -17,58 +22,66 @@ type Msg
     | FetchFailure Http.Error
     | ToRecipe RecipeId
     | CreateRecipe
+    | Mdl (Material.Msg Msg)
 
 
 type alias Model =
     { recipes : List Recipe
     , error : Maybe String
+    , mdl : Material.Model
     }
-
+ 
 
 initialModel : Model
 initialModel =
-    Model [] Nothing
+    Model [] Nothing Material.model
 
 
 view : Model -> Html Msg
 view model =
     div []
         [ showError model.error
-        , showCrud
-        , div [ class "row" ] [ showRecipes model.recipes ]
+        , div [ class "row" ] [ showRecipes model ]
         ]
 
 
-showCrud : Html Msg
-showCrud =
-    div [ class "row crud" ]
-        [ div [ class "col-sm-2" ]
-            [ div
-                [ href ""
-                , class "btn btn-sm btn-success"
-                , onClick CreateRecipe
-                ]
-                [ text "Add recipe" ]
-            ]
-        ]
+showRecipes : Model -> Html Msg
+showRecipes model =
+    div [] (List.map (recipeBox model) model.recipes)
 
 
-showRecipes : List Recipe -> Html Msg
-showRecipes recipes =
-    div [ class "grid" ] (List.map recipeRow recipes)
-
-
-recipeRow : Recipe -> Html Msg
-recipeRow recipe =
+recipeBox : Model -> Recipe -> Html Msg
+recipeBox model recipe =
     case recipe.id of
         Just id ->
             div [ class "grid-item" ]
-                [ div [ class "panel panel-default" ]
-                    [ div [ class "panel-heading" ]
-                        [ p [ class "panel-title", onClick (ToRecipe id) ]
-                            [ text recipe.name ]
+                [ Card.view
+                    [ css "width" "350px" ]
+                    [ Card.title
+                        [ Color.text Color.white ]
+                        [ Card.head [] [ text recipe.name ] ]
+                    , Card.text
+                        [ Card.border ]
+                        [ text recipe.description ]
+                    , Card.actions
+                        [ Card.border ]
+                        [ Button.render Mdl
+                            [ 0, id ]
+                            model.mdl
+                            [ Button.ripple
+                            , Button.raised
+                            , Button.colored
+                            , Button.onClick (ToRecipe id)
+                            ]
+                            [ text "View" ]
+                        , Button.render Mdl
+                            [ 1, id ]
+                            model.mdl
+                            [ Button.ripple
+                            , Button.raised
+                            , Button.colored ] 
+                            [ text "Ingredients" ]
                         ]
-                    , div [ class "panel-body" ] [ text recipe.description ]
                     ]
                 ]
 
@@ -77,26 +90,27 @@ recipeRow recipe =
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
-update message recipes =
+update message model =
     case message of
         FetchSuccess newRecipes ->
-            ( Model newRecipes.recipes (Nothing), Cmd.none )
+            ( Model newRecipes.recipes (Nothing) Material.model, Cmd.none )
 
         FetchFailure error ->
-            ( Model [] (Just (errorToString error)), Cmd.none )
+            ( Model [] (Just (errorToString error)) Material.model, Cmd.none )
 
         ToRecipe id ->
-            Debug.log "TORECIPE"
-                ( recipes
-                , Navigation.newUrl
-                    (Routing.toHash (Routing.RecipeView id))
-                )
+            ( model
+            , Navigation.newUrl
+                (Routing.toHash (Routing.RecipeView id))
+            )
 
         CreateRecipe ->
-            Debug.log "CREATE"
-                ( recipes
-                , Navigation.newUrl (Routing.toHash Routing.RecipeCreate)
-                )
+            ( model
+            , Navigation.newUrl (Routing.toHash Routing.RecipeCreate)
+            )
+
+        Mdl msg' ->
+            Material.update msg' model
 
 
 fetchAll : Cmd Msg
