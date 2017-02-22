@@ -12,13 +12,25 @@ errorToString error =
             "Timeout"
 
         Http.NetworkError ->
-            "NetworkError"
+            "Network Error"
 
-        Http.UnexpectedPayload e ->
-            "UnexpectedPayload: " ++ e
+        Http.BadUrl s ->
+            "BadURL Error: " ++ s
 
-        Http.BadResponse code e ->
-            "BadResponse: " ++ (toString code) ++ " " ++ e
+        Http.BadStatus r ->
+            "BadStatus Error: " ++ (statusToString r)
+
+        Http.BadPayload s r ->
+            "BadPayload Error: " ++ (statusToString r)
+
+
+statusToString : Http.Response String -> String
+statusToString r =
+    " ("
+        ++ (toString r.status.code)
+        ++ ", "
+        ++ r.status.message
+        ++ ")"
 
 
 showError : Maybe String -> Html a

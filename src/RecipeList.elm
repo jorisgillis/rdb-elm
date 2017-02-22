@@ -1,14 +1,14 @@
 module RecipeList exposing (..)
 
 import Http
-import Json.Decode as Decode exposing ((:=))
-import Task
+import Json.Decode exposing (Decoder, list, dict)
+import Json.Decode.Pipeline exposing (decode, required, optional)
 import Html exposing (..)
 import Html.Attributes exposing (class, id, href)
-import Html.Events exposing (onClick)
 import Navigation
 import Material
 import Material.Button as Button
+import Material.Options as Options
 import Material.Card as Card
 import Material.Options exposing (css)
 import Material.Color as Color
@@ -18,11 +18,14 @@ import ErrorHandling exposing (errorToString, showError)
 
 
 type Msg
-    = FetchSuccess { recipes : List Recipe }
-    | FetchFailure Http.Error
+    = Fetched (Result Http.Error Recipes)
     | ToRecipe RecipeId
     | CreateRecipe
     | Mdl (Material.Msg Msg)
+
+
+type alias Recipes =
+    { recipes : List Recipe }
 
 
 type alias Model =
@@ -30,7 +33,7 @@ type alias Model =
     , error : Maybe String
     , mdl : Material.Model
     }
- 
+
 
 initialModel : Model
 initialModel =
@@ -71,7 +74,7 @@ recipeBox model recipe =
                             [ Button.ripple
                             , Button.raised
                             , Button.colored
-                            , Button.onClick (ToRecipe id)
+                            , Options.onClick (ToRecipe id)
                             ]
                             [ text "View" ]
                         , Button.render Mdl
@@ -79,7 +82,8 @@ recipeBox model recipe =
                             model.mdl
                             [ Button.ripple
                             , Button.raised
-                            , Button.colored ] 
+                            , Button.colored
+                            ]
                             [ text "Ingredients" ]
                         ]
                     ]
@@ -92,11 +96,13 @@ recipeBox model recipe =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update message model =
     case message of
-        FetchSuccess newRecipes ->
+        Fetched (Ok newRecipes) ->
             ( Model newRecipes.recipes (Nothing) Material.model, Cmd.none )
 
-        FetchFailure error ->
-            ( Model [] (Just (errorToString error)) Material.model, Cmd.none )
+        Fetched (Err error) ->
+            ( Model [] (Just (errorToString error)) Material.model
+            , Navigation.newUrl "http://localhost:3000/login"
+            )
 
         ToRecipe id ->
             ( model
@@ -109,25 +115,17 @@ update message model =
             , Navigation.newUrl (Routing.toHash Routing.RecipeCreate)
             )
 
-        Mdl msg' ->
-            Material.update msg' model
+        Mdl msg_ ->
+            Material.update Mdl msg_ model
 
 
 fetchAll : Cmd Msg
 fetchAll =
-    Http.get recipesDecoder "http://localhost:3000/recipe/"
-        |> Task.perform FetchFailure FetchSuccess
+    Http.get "http://localhost:3000/recipe/" recipesDecoder
+        |> Http.send Fetched
 
 
-type alias Recipes =
-    { recipes : List Recipe }
-
-
-recipesDecoder : Decode.Decoder Recipes
+recipesDecoder : Decoder Recipes
 recipesDecoder =
-    Decode.object1 Recipes ("recipes" := recipeListDecoder)
-
-
-recipeListDecoder : Decode.Decoder (List Recipe)
-recipeListDecoder =
-    Decode.list recipeDecoder
+    decode Recipes
+        |> required "recipes" (list recipeDecoder)

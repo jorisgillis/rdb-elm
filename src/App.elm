@@ -1,12 +1,9 @@
 module App exposing (..)
 
 import Html exposing (Html, div, text, ul, li, p, a, h1)
-import Html.App
 import Html.Attributes exposing (class, style)
-import Html.Events exposing (onClick)
-import String
-import Navigation exposing (program)
-import UrlParser exposing (Parser, (</>), format, int, oneOf, s, string)
+import Navigation exposing (Location)
+import UrlParser exposing (Parser, (</>), int, oneOf, map, s, string)
 import Material
 import Material.Layout as Layout
 import Routing exposing (..)
@@ -14,6 +11,7 @@ import RecipeList
 import RecipeView
 import RecipeEdit
 import RecipeModel exposing (RecipeId, RecipeModel, newRecipe)
+import Ports
 
 
 type alias Model =
@@ -24,9 +22,9 @@ type alias Model =
     }
 
 
-init : Result String Page -> ( Model, Cmd Msg )
-init result =
-    urlUpdate result initialModel
+init : Location -> ( Model, Cmd Msg )
+init location =
+    urlUpdate location initialModel
 
 
 initialModel : Model
@@ -45,18 +43,33 @@ type Msg
     | GoHome
     | Mdl (Material.Msg Msg)
     | SelectTab Int
+    | UrlChange Location
 
 
 view : Model -> Html Msg
 view model =
+    renderMainLayout model
+
+
+renderMainLayout : Model -> Html Msg
+renderMainLayout model =
     Layout.render Mdl
         model.mdl
         [ Layout.fixedHeader
         , Layout.onSelectTab SelectTab
         ]
-        { header = [ h1 [ style [ ( "padding-left", "20px" ) ] ] [ text "RecipeDB" ] ]
+        { header =
+            [ h1
+                [ style [ ( "padding-left", "20px" ) ] ]
+                [ text "RecipeDB" ]
+            ]
         , drawer = []
-        , tabs = ( [ text "Home", text "Add Recipe" ], [] )
+        , tabs =
+            ( [ text "Home"
+              , text "Add Recipe"
+              ]
+            , []
+            )
         , main =
             [ loadPage model ]
         }
@@ -66,28 +79,16 @@ loadPage : Model -> Html Msg
 loadPage model =
     case model.route of
         Home ->
-            (Html.App.map RecipeListMsg (RecipeList.view model.recipes))
+            (Html.map RecipeListMsg (RecipeList.view model.recipes))
 
         RecipeView _ ->
-            (Html.App.map RecipeViewMsg (RecipeView.view model.recipe))
+            (Html.map RecipeViewMsg (RecipeView.view model.recipe))
 
         RecipeEdit _ ->
-            (Html.App.map RecipeEditMsg (RecipeEdit.view model.recipe))
+            (Html.map RecipeEditMsg (RecipeEdit.view model.recipe))
 
         RecipeCreate ->
-            (Html.App.map RecipeEditMsg (RecipeEdit.view model.recipe))
-
-
-showNavigation : Html Msg
-showNavigation =
-    div [ class "navbar navbar-default" ]
-        [ div [ class "container" ]
-            [ div [ class "navbarheader" ]
-                [ a [ onClick GoHome ]
-                    [ p [ class "navbar-brand" ] [ text "RecipeDB" ] ]
-                ]
-            ]
-        ]
+            (Html.map RecipeEditMsg (RecipeEdit.view model.recipe))
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -117,8 +118,8 @@ update msg model =
         GoHome ->
             ( model, Navigation.newUrl (Routing.toHash Routing.Home) )
 
-        Mdl msg' ->
-            Material.update msg' model
+        Mdl msg_ ->
+            Material.update Mdl msg_ model
 
         SelectTab num ->
             case num of
@@ -131,10 +132,18 @@ update msg model =
                 _ ->
                     ( model, Navigation.newUrl (Routing.toHash Routing.Home) )
 
+        UrlChange location ->
+            urlUpdate location model
 
-urlUpdate : Result String Page -> Model -> ( Model, Cmd Msg )
-urlUpdate result model =
-    updatePage (Result.withDefault Home result) model
+
+urlUpdate : Location -> Model -> ( Model, Cmd Msg )
+urlUpdate location model =
+    case (hashParser location) of
+        Just page ->
+            updatePage page model
+
+        Nothing ->
+            updatePage Home model
 
 
 updatePage : Page -> Model -> ( Model, Cmd Msg )
@@ -174,18 +183,16 @@ updatePageMessage page =
 pageParser : Parser (Page -> a) a
 pageParser =
     oneOf
-        [ format Home (s "")
-        , format RecipeEdit (s "recipe" </> s "edit" </> int)
-        , format RecipeCreate (s "createrecipe")
-        , format RecipeView (s "recipe" </> int)
+        [ map Home (s "")
+        , map RecipeEdit (s "recipe" </> s "edit" </> int)
+        , map RecipeCreate (s "createrecipe")
+        , map RecipeView (s "recipe" </> int)
         ]
 
 
-hashParser : Navigation.Location -> Result String Page
+hashParser : Location -> Maybe Page
 hashParser location =
-    location.hash
-        |> String.dropLeft 1
-        |> UrlParser.parse identity pageParser
+    UrlParser.parseHash pageParser location
 
 
 subscriptions : Model -> Sub Msg
@@ -193,13 +200,12 @@ subscriptions model =
     Sub.none
 
 
-main : Program Never
+main : Program Never Model Msg
 main =
-    program
-        (Navigation.makeParser hashParser)
+    Navigation.program
+        UrlChange
         { init = init
         , update = update
-        , urlUpdate = urlUpdate
         , view = view
         , subscriptions = subscriptions
         }

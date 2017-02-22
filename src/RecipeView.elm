@@ -1,28 +1,23 @@
 module RecipeView exposing (..)
 
 import Html exposing (Html, div, p, h2, h3, h5, text, form, input, textarea, button)
-import Html.Attributes exposing (class, type', value, name, href)
-import Html.Events exposing (onClick, onInput)
+import Html.Attributes exposing (class, value, name, href)
 import Http
 import Task
 import Navigation exposing (modifyUrl)
 import Routing
-import Json.Decode exposing ((:=))
 import RecipeModel as RecipeModel exposing (..)
 import ErrorHandling exposing (errorToString, showError)
 import Material
 import Material.Button as Button
-import Material.Card as Card
-import Material.Color as Color
+import Material.Options as Options
 import Material.Options exposing (cs)
 
 
 type Msg
-    = FetchSuccess Recipe
-    | FetchFailure Http.Error
+    = RecipeFetched (Result Http.Error Recipe)
     | DeleteRecipe
-    | DeleteFailure Http.Error
-    | DeleteSuccess
+    | RecipeDeleted (Result Http.Error ())
     | UpdateRecipe
     | Mdl (Material.Msg Msg)
 
@@ -49,7 +44,7 @@ showRecipe model =
             model.mdl
             [ Button.ripple
             , Button.raised
-            , Button.onClick UpdateRecipe
+            , Options.onClick UpdateRecipe
             ]
             [ text "Update Recipe" ]
         , Button.render Mdl
@@ -57,7 +52,7 @@ showRecipe model =
             model.mdl
             [ Button.ripple
             , Button.raised
-            , Button.onClick DeleteRecipe
+            , Options.onClick DeleteRecipe
             ]
             [ text "Delete Recipe" ]
         ]
@@ -66,10 +61,10 @@ showRecipe model =
 update : Msg -> RecipeModel -> ( RecipeModel, Cmd Msg )
 update msg model =
     case msg of
-        FetchSuccess recipe ->
+        RecipeFetched (Ok recipe) ->
             ( { model | recipe = recipe }, Cmd.none )
 
-        FetchFailure error ->
+        RecipeFetched (Err error) ->
             ( { model | error = (Just (errorToString error)) }, Cmd.none )
 
         DeleteRecipe ->
@@ -80,11 +75,11 @@ update msg model =
                 Nothing ->
                     ( { model | error = Just "No recipe selected" }, Cmd.none )
 
-        DeleteFailure error ->
-            ( { model | error = (Just (errorToString error)) }, Cmd.none )
-
-        DeleteSuccess ->
+        RecipeDeleted (Ok _) ->
             ( initialModel, modifyUrl (Routing.toHash Routing.Home) )
+
+        RecipeDeleted (Err e) ->
+            ( { model | error = (Just (errorToString e)) }, Cmd.none )
 
         UpdateRecipe ->
             let
@@ -104,27 +99,25 @@ update msg model =
             in
                 ( model, cmd )
 
-        Mdl msg' ->
-            Material.update msg' model
+        Mdl msg_ ->
+            Material.update Mdl msg_ model
 
 
 fetchRecipe : RecipeId -> Cmd Msg
 fetchRecipe id =
-    Http.get recipeDecoder (recipeUrl id)
-        |> Task.perform FetchFailure FetchSuccess
+    Http.get (recipeUrl id) recipeDecoder
+        |> Http.send RecipeFetched
 
 
 deleteRecipe : RecipeId -> Cmd Msg
 deleteRecipe id =
-    Http.send Http.defaultSettings (deleteRequest id)
-        |> Http.fromJson Json.Decode.value
-        |> Task.perform DeleteFailure (\_ -> DeleteSuccess)
-
-
-deleteRequest : RecipeId -> Http.Request
-deleteRequest id =
-    { verb = "DELETE"
-    , headers = []
-    , url = recipeUrl id
-    , body = Http.empty
-    }
+    Http.request
+        { method = "DELETE"
+        , headers = []
+        , url = recipeUrl id
+        , body = Http.emptyBody
+        , expect = Http.expectStringResponse (\_ -> Ok ())
+        , timeout = Nothing
+        , withCredentials = True
+        }
+        |> Http.send RecipeDeleted

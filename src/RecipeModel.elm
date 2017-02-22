@@ -1,7 +1,9 @@
 module RecipeModel exposing (..)
 
-import Json.Decode as Decode exposing ((:=))
 import Material
+import Json.Decode exposing (int, string, float, nullable, Decoder)
+import Json.Decode.Pipeline exposing (decode, required, optional, hardcoded)
+
 
 type alias RecipeId =
     Int
@@ -21,12 +23,13 @@ newRecipe =
     , description = ""
     }
 
-recipeDecoder : Decode.Decoder Recipe
+
+recipeDecoder : Decoder Recipe
 recipeDecoder =
-    Decode.object3 Recipe
-        ("id" := Decode.maybe Decode.int)
-        ("name" := Decode.string)
-        ("description" := Decode.string)
+    decode Recipe
+        |> required "id" (nullable int)
+        |> required "name" string
+        |> required "description" string
 
 
 type alias RecipeModel =

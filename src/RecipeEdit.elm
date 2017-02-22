@@ -18,7 +18,6 @@ import Html
 import Html.Attributes
     exposing
         ( class
-        , type'
         , value
         , name
         , href
@@ -28,17 +27,17 @@ import Html.Attributes
         , placeholder
         , method
         )
-import Html.Events exposing (onClick, onInput)
-import Task
 import Navigation exposing (modifyUrl)
 import Routing
-import Json.Decode exposing ((:=))
+import Json.Decode exposing (Decoder, int)
+import Json.Decode.Pipeline exposing (decode, required, optional)
 import Json.Encode as JSE
 import RecipeModel as RecipeModel exposing (..)
 import ErrorHandling exposing (errorToString, showError)
 import Material
 import Material.Button as Button
 import Material.Textfield as Textfield
+import Material.Options as Options
 
 
 type Msg
@@ -46,10 +45,8 @@ type Msg
     | UpdateDescription String
     | PersistRecipe
     | Cancel
-    | UpdateFailure Http.Error
-    | UpdateSuccess
-    | CreateFailure Http.Error
-    | CreateSuccess RecipeId
+    | RecipeUpdated (Result Http.Error ())
+    | RecipeCreated (Result Http.Error CreateId)
     | Mdl (Material.Msg Msg)
 
 
@@ -83,10 +80,11 @@ recipeForm model =
                 model.mdl
                 [ Textfield.label "Name"
                 , Textfield.floatingLabel
-                , Textfield.text'
+                , Textfield.text_
                 , Textfield.value model.recipe.name
-                , Textfield.onInput UpdateName
+                , Options.onInput UpdateName
                 ]
+                []
             ]
         , div
             [ class "row" ]
@@ -98,8 +96,9 @@ recipeForm model =
                 , Textfield.textarea
                 , Textfield.rows 6
                 , Textfield.value model.recipe.description
-                , Textfield.onInput UpdateDescription
+                , Options.onInput UpdateDescription
                 ]
+                []
             ]
         , div
             [ class "row" ]
@@ -108,7 +107,7 @@ recipeForm model =
                 model.mdl
                 [ Button.raised
                 , Button.ripple
-                , Button.onClick Cancel
+                , Options.onClick Cancel
                 ]
                 [ text "Cancel" ]
             , Button.render Mdl
@@ -116,26 +115,10 @@ recipeForm model =
                 model.mdl
                 [ Button.raised
                 , Button.ripple
-                , Button.onClick PersistRecipe
+                , Options.onClick PersistRecipe
                 ]
                 [ text "Save" ]
             ]
-          --         [ href ""
-          --         , class "btn btn-sm btn-primary align-right"
-          --         , onClick PersistRecipe
-          --         ]
-          --         [ text "Save" ]
-          --     ]
-          -- , div
-          --     [ class "col-sm-2" ]
-          --     [ div
-          --         [ href ""
-          --         , class "btn btn-sm btn-primary"
-          --         , onClick Cancel
-          --         ]
-          --         [ text "Cancel" ]
-          --     ]
-          -- ]
         ]
 
 
@@ -173,27 +156,27 @@ update msg model =
         Cancel ->
             ( model, toRecipeOrHome model.recipe )
 
-        UpdateFailure error ->
-            ( { model | error = (Just (errorToString error)) }, Cmd.none )
-
-        UpdateSuccess ->
+        RecipeUpdated (Ok _) ->
             ( { model | error = Nothing }, toRecipeOrHome model.recipe )
 
-        CreateFailure error ->
-            ( { model | error = (Just (errorToString error)) }, toHome )
+        RecipeUpdated (Err error) ->
+            ( { model | error = (Just (errorToString error)) }, Cmd.none )
 
-        CreateSuccess id ->
+        RecipeCreated (Ok id) ->
             let
                 recipe =
                     model.recipe
 
                 newRecipe =
-                    { recipe | id = Just id }
+                    { recipe | id = Just id.id }
             in
                 ( { model | recipe = newRecipe, error = Nothing }, toHome )
 
-        Mdl msg' ->
-            Material.update msg' model
+        RecipeCreated (Err error) ->
+            ( { model | error = (Just (errorToString error)) }, toHome )
+
+        Mdl msg_ ->
+            Material.update Mdl msg_ model
 
 
 toRecipeOrHome recipe =
@@ -212,65 +195,51 @@ toHome =
         (Routing.toHash Routing.Home)
 
 
-idDecoder : Json.Decode.Decoder Int
-idDecoder =
-    "id" := Json.Decode.int
-
-
 updateRecipe : RecipeId -> Recipe -> Cmd Msg
 updateRecipe id recipe =
-    Http.send Http.defaultSettings (updateRequest id recipe)
-        |> Http.fromJson Json.Decode.value
-        |> Task.perform UpdateFailure (\_ -> UpdateSuccess)
+    Http.request
+        { method = "PUT"
+        , headers = []
+        , url = baseRecipeUrl
+        , body = Http.jsonBody (updateRequestBody id recipe)
+        , expect = Http.expectStringResponse (\_ -> Ok ())
+        , timeout = Nothing
+        , withCredentials = True
+        }
+        |> Http.send RecipeUpdated
 
 
-updateRequest : RecipeId -> Recipe -> Http.Request
-updateRequest id recipe =
-    { verb = "PUT"
-    , headers = [ ( "Content-Type", "application/json" ) ]
-    , url = baseRecipeUrl
-    , body = Http.string (updateRequestBody id recipe)
-    }
-
-
-updateRequestBody : RecipeId -> Recipe -> String
+updateRequestBody : RecipeId -> Recipe -> JSE.Value
 updateRequestBody id recipe =
-    let
-        jsonRecipe =
-            (JSE.object
-                [ ( "id", JSE.int id )
-                , ( "name", JSE.string recipe.name )
-                , ( "description", JSE.string recipe.description )
-                ]
-            )
-    in
-        JSE.encode 0 jsonRecipe
+    JSE.object
+        [ ( "id", JSE.int id )
+        , ( "name", JSE.string recipe.name )
+        , ( "description", JSE.string recipe.description )
+        ]
+
+
+type alias CreateId =
+    { id : Int }
+
+
+idDecoder : Decoder CreateId
+idDecoder =
+    decode CreateId
+        |> required "id" int
 
 
 createRecipe : Recipe -> Cmd Msg
 createRecipe recipe =
-    Http.send Http.defaultSettings (createRequest recipe)
-        |> Http.fromJson idDecoder
-        |> Task.perform CreateFailure CreateSuccess
+    Http.post
+        baseRecipeUrl
+        (Http.jsonBody (createRequestBody recipe))
+        idDecoder
+        |> Http.send RecipeCreated
 
 
-createRequest : Recipe -> Http.Request
-createRequest recipe =
-    { verb = "POST"
-    , headers = [ ( "Content-Type", "application/json" ) ]
-    , url = baseRecipeUrl
-    , body = Http.string (createRequestBody recipe)
-    }
-
-
-createRequestBody : Recipe -> String
+createRequestBody : Recipe -> JSE.Value
 createRequestBody recipe =
-    let
-        jsonRecipe =
-            (JSE.object
-                [ ( "name", JSE.string recipe.name )
-                , ( "description", JSE.string recipe.description )
-                ]
-            )
-    in
-        JSE.encode 0 jsonRecipe
+    JSE.object
+        [ ( "name", JSE.string recipe.name )
+        , ( "description", JSE.string recipe.description )
+        ]
