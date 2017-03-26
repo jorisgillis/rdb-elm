@@ -8,6 +8,11 @@ h3.recipe-title {
     font-weight: bold;
 }
 
+h5.recipe-author {
+    font-size: 13pt;
+    font-weight: bold;
+}
+
 .crud {
     clear: left;
     padding-bottom: 15px;

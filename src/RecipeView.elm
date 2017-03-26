@@ -36,6 +36,9 @@ showRecipe model =
         [ h3
             [ class "recipe-title" ]
             [ text model.recipe.name ]
+        , h5
+            [ class "recipe-author" ]
+            [ text ("Author: " ++ model.recipe.username) ]
         , p
             []
             [ text model.recipe.description ]

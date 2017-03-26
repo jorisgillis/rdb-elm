@@ -11,12 +11,14 @@ import RecipeList
 import RecipeView
 import RecipeEdit
 import RecipeModel exposing (RecipeId, RecipeModel, newRecipe)
+import User
 import Ports
 
 
 type alias Model =
     { recipes : RecipeList.Model
     , recipe : RecipeModel
+    , user : User.User
     , route : Page
     , mdl : Material.Model
     }
@@ -24,13 +26,23 @@ type alias Model =
 
 init : Location -> ( Model, Cmd Msg )
 init location =
-    urlUpdate location initialModel
+    let
+        ( model, msg ) =
+            urlUpdate location initialModel
+    in
+        ( model
+        , Cmd.batch
+            [ msg
+            , Cmd.map UserMsg User.getUser
+            ]
+        )
 
 
 initialModel : Model
 initialModel =
     { recipes = RecipeList.initialModel
     , recipe = RecipeModel.initialModel
+    , user = User.initialModel
     , route = Home
     , mdl = Material.model
     }
@@ -40,6 +52,7 @@ type Msg
     = RecipeListMsg RecipeList.Msg
     | RecipeViewMsg RecipeView.Msg
     | RecipeEditMsg RecipeEdit.Msg
+    | UserMsg User.Msg
     | GoHome
     | Mdl (Material.Msg Msg)
     | SelectTab Int
@@ -71,7 +84,9 @@ renderMainLayout model =
             , []
             )
         , main =
-            [ loadPage model ]
+            [ Html.map UserMsg (User.greeting model.user)
+            , loadPage model
+            ]
         }
 
 
@@ -114,6 +129,13 @@ update msg model =
                     RecipeEdit.update subMsg model.recipe
             in
                 ( { model | recipe = newRecipe }, Cmd.map RecipeEditMsg cmd )
+
+        UserMsg subMsg ->
+            let
+                ( newUser, cmd ) =
+                    User.update subMsg model.user
+            in
+                ( { model | user = newUser }, Cmd.map UserMsg cmd )
 
         GoHome ->
             ( model, Navigation.newUrl (Routing.toHash Routing.Home) )

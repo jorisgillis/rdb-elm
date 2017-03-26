@@ -13,6 +13,7 @@ type alias Recipe =
     { id : Maybe RecipeId
     , name : String
     , description : String
+    , username : String
     }
 
 
@@ -21,6 +22,7 @@ newRecipe =
     { id = Nothing
     , name = ""
     , description = ""
+    , username = ""
     }
 
 
@@ -30,6 +32,7 @@ recipeDecoder =
         |> required "id" (nullable int)
         |> required "name" string
         |> required "description" string
+        |> required "username" string
 
 
 type alias RecipeModel =
