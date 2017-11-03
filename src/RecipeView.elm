@@ -1,6 +1,21 @@
 module RecipeView exposing (..)
 
-import Html exposing (Html, div, p, h2, h3, h5, text, form, input, textarea, button)
+import Html
+    exposing
+        ( Html
+        , div
+        , p
+        , ul
+        , li
+        , h2
+        , h3
+        , h5
+        , text
+        , form
+        , input
+        , textarea
+        , button
+        )
 import Html.Attributes exposing (class, value, name, href)
 import Http
 import Task
@@ -30,6 +45,13 @@ view model =
         ]
 
 
+showIngredientFor : IngredientFor -> Html Msg
+showIngredientFor i =
+    li
+        []
+        [ text (i.name ++ " x" ++ (toString i.amount) ++ " " ++ i.unit) ]
+
+
 showRecipe : RecipeModel -> Html Msg
 showRecipe model =
     div []
@@ -39,6 +61,9 @@ showRecipe model =
         , h5
             [ class "recipe-author" ]
             [ text ("Author: " ++ model.recipe.username) ]
+        , ul
+            []
+            (List.map showIngredientFor model.recipe.ingredients)
         , p
             []
             [ text model.recipe.description ]

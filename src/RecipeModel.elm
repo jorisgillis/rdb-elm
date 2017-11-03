@@ -1,7 +1,7 @@
 module RecipeModel exposing (..)
 
 import Material
-import Json.Decode exposing (int, string, float, nullable, Decoder)
+import Json.Decode exposing (int, string, float, nullable, list, Decoder)
 import Json.Decode.Pipeline exposing (decode, required, optional, hardcoded)
 
 
@@ -9,11 +9,21 @@ type alias RecipeId =
     Int
 
 
+type alias IngredientFor =
+    { id : Int
+    , name : String
+    , description : String
+    , amount : Float
+    , unit : String
+    }
+
+
 type alias Recipe =
     { id : Maybe RecipeId
     , name : String
     , description : String
     , username : String
+    , ingredients : List IngredientFor
     }
 
 
@@ -23,7 +33,18 @@ newRecipe =
     , name = ""
     , description = ""
     , username = ""
+    , ingredients = []
     }
+
+
+ingredientForDecoder : Decoder IngredientFor
+ingredientForDecoder =
+    decode IngredientFor
+        |> required "id" int
+        |> required "name" string
+        |> required "description" string
+        |> required "amount" float
+        |> required "unit" string
 
 
 recipeDecoder : Decoder Recipe
@@ -33,6 +54,7 @@ recipeDecoder =
         |> required "name" string
         |> required "description" string
         |> required "username" string
+        |> required "ingredients" (list ingredientForDecoder)
 
 
 type alias RecipeModel =

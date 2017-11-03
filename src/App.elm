@@ -12,7 +12,6 @@ import RecipeView
 import RecipeEdit
 import RecipeModel exposing (RecipeId, RecipeModel, newRecipe)
 import User
-import Ports
 
 
 type alias Model =
