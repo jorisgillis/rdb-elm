@@ -6,10 +6,14 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
     <link rel="stylesheet" href="https://code.getmdl.io/1.2.0/material.min.css" />
     <link rel="stylesheet" href="main.css">
-    
+
     <script src="App.js" type="text/javascript"></script>
   </head>
   <body>
-    <script type="text/javascript">Elm.App.fullscreen()</script>
+    <script type="text/javascript">
+      Elm.App.fullscreen({
+        clientId: '<!-- @echo CLIENT_ID -->'
+      })
+    </script>
   </body>
 </html>

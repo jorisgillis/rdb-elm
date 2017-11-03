@@ -1,6 +1,7 @@
 module RecipeList exposing (..)
 
 import Http
+import HttpAuth
 import Json.Decode exposing (Decoder, list, dict)
 import Json.Decode.Pipeline exposing (decode, required, optional)
 import Html exposing (..)
@@ -121,7 +122,7 @@ update message model =
 
 fetchAll : Cmd Msg
 fetchAll =
-    Http.get "http://localhost:3000/recipe/" recipesDecoder
+    HttpAuth.get "http://localhost:3000/recipe/" recipesDecoder
         |> Http.send Fetched
 
 

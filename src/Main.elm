@@ -17,34 +17,37 @@ import User
 type alias Model =
     { recipes : RecipeList.Model
     , recipe : RecipeModel
-    , user : User.User
     , route : Page
     , mdl : Material.Model
+    , user : User.Model
     }
 
 
-init : Location -> ( Model, Cmd Msg )
-init location =
+type alias Flags =
+    { clientId : String }
+
+
+init : Flags -> Location -> ( Model, Cmd Msg )
+init flags location =
     let
-        ( model, msg ) =
-            urlUpdate location initialModel
+        ( userModel, userCmd ) =
+            (User.init flags.clientId location)
+
+        ( initializedModel, pageCmd ) =
+            urlUpdate location
+                { recipes = RecipeList.initialModel
+                , recipe = RecipeModel.initialModel
+                , route = Home
+                , mdl = Material.model
+                , user = userModel
+                }
     in
-        ( model
+        ( initializedModel
         , Cmd.batch
-            [ msg
-            , Cmd.map UserMsg User.getUser
+            [ Cmd.map UserMsg userCmd
+            , pageCmd
             ]
         )
-
-
-initialModel : Model
-initialModel =
-    { recipes = RecipeList.initialModel
-    , recipe = RecipeModel.initialModel
-    , user = User.initialModel
-    , route = Home
-    , mdl = Material.model
-    }
 
 
 type Msg
@@ -221,9 +224,9 @@ subscriptions model =
     Sub.none
 
 
-main : Program Never Model Msg
+main : Program Flags Model Msg
 main =
-    Navigation.program
+    Navigation.programWithFlags
         UrlChange
         { init = init
         , update = update
