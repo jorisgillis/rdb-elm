@@ -120,9 +120,9 @@ update message model =
             Material.update Mdl msg_ model
 
 
-fetchAll : Cmd Msg
-fetchAll =
-    HttpAuth.get "http://localhost:3000/recipe/" recipesDecoder
+fetchAll : HttpAuth.HttpAuthModel -> Cmd Msg
+fetchAll authModel =
+    HttpAuth.get authModel "http://localhost:3000/recipe/" recipesDecoder
         |> Http.send Fetched
 
 

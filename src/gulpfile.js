@@ -20,7 +20,7 @@ gulp.task('copy css', function () {
 });
 
 gulp.task('compile Elm', function () {
-  cmd('elm-make Main.elm --output App.js', {})
+  cmd('elm-make Main.elm --output App.js --debug', {})
 });
 
 gulp.task('default', [

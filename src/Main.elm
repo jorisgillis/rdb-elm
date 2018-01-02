@@ -12,6 +12,7 @@ import RecipeView
 import RecipeEdit
 import RecipeModel exposing (RecipeId, RecipeModel, newRecipe)
 import User
+import HttpAuth
 
 
 type alias Model =
@@ -20,6 +21,7 @@ type alias Model =
     , route : Page
     , mdl : Material.Model
     , user : User.Model
+    , auth : HttpAuth.HttpAuthModel
     }
 
 
@@ -31,7 +33,8 @@ init : Flags -> Location -> ( Model, Cmd Msg )
 init flags location =
     let
         ( userModel, userCmd ) =
-            (User.init flags.clientId location)
+            Debug.log "User Model"
+                (User.init flags.clientId location)
 
         ( initializedModel, pageCmd ) =
             urlUpdate location
@@ -40,6 +43,7 @@ init flags location =
                 , route = Home
                 , mdl = Material.model
                 , user = userModel
+                , auth = HttpAuth.initModel userModel.token
                 }
     in
         ( initializedModel
@@ -176,7 +180,7 @@ updatePage page model =
         | route = page
         , recipe = newRecipeOnCreate page model.recipe
       }
-    , updatePageMessage page
+    , updatePageMessage model page
     )
 
 
@@ -188,11 +192,11 @@ newRecipeOnCreate page model =
         model
 
 
-updatePageMessage : Page -> Cmd Msg
-updatePageMessage page =
+updatePageMessage : Model -> Page -> Cmd Msg
+updatePageMessage model page =
     case page of
         Home ->
-            Cmd.map RecipeListMsg (RecipeList.fetchAll)
+            Cmd.map RecipeListMsg (RecipeList.fetchAll model.auth)
 
         RecipeView id ->
             Cmd.map RecipeViewMsg (RecipeView.fetchRecipe id)
