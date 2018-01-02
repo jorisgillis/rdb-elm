@@ -5,4 +5,5 @@ repl-temp-*
 src/App.js
 src/dist/*
 src/node_modules
+src/index.html
 src/package-lock.json
