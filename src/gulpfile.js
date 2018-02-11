@@ -9,23 +9,17 @@ gulp.task('environment variables', function () {
     .pipe(gulp.dest('./dist/'))
 });
 
-gulp.task('copy App.js', function () {
-  gulp.src('./App.js')
-    .pipe(gulp.dest('./dist/'))
-});
-
 gulp.task('copy css', function () {
   gulp.src('./*.css')
     .pipe(gulp.dest('./dist/'))
 });
 
 gulp.task('compile Elm', function () {
-  cmd('elm-make Main.elm --output App.js --debug', {})
+  cmd('elm-make App.elm --debug --output dist/App.js', {})
 });
 
 gulp.task('default', [
   'compile Elm',
   'environment variables',
-  'copy App.js',
   'copy css'
 ])

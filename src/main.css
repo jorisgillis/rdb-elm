@@ -1,70 +1,30 @@
-h2.page-header {
-    font-size: 16pt;
-    font-weight: bold;
+body {
+    margin: 0px;
+    padding: 0px;
 }
 
-h3.recipe-title {
-    font-size: 15pt;
-    font-weight: bold;
+.wrapper {
+    display: grid;
+    grid-gap: 10px;
+    grid-template-columns: 240px  240px  240px;
+    grid-template-areas:
+    "header header  header"
+        "content content content";
+    background-color: #fff;
+    color: #444;
+    margin: 0px;
 }
 
-h5.recipe-author {
-    font-size: 13pt;
-    font-weight: bold;
+.content {
+    grid-area: content;
 }
 
-.crud {
-    clear: left;
-    padding-bottom: 15px;
+.header {
+    grid-area: header;
+    background-color: #90EE90;
+    margin: 0px;
 }
 
-.grid-item {
-    width: 350px;
-    float: left;
-    padding: 4px;
-}
-
-.grid-item--width2 {
-    width: 700px;
-}
-
-.row {
-    padding-bottom: 7px;
-}
-
-.align-right {
-    float: right
-}
-
-.mdl-layout__header {
-    background-color: #339933;
-}
-
-.mdl-layout__tab-bar {
-    background-color: #33AA33;
-}
-
-.mdl-layout__tab-bar-button {
-    background-color: #33AA33;
-}
-
-.mdl-card {
-    width: 350px;
-    background-color: #33AA33;
-}
-
-.recipe-card {
-    width: 800px;
-}
-
-.mdl-card__title {
-    background-color: #33AA33;
-}
-
-.mdl-card__supporting-text {
-    background-color: #c8ff90;
-}
-
-.mdl-button--colored {
-    background-color: #44BB44 !important;
+h1.title {
+    
 }

@@ -1,7 +1,7 @@
 {
     "version": "1.0.0",
-    "summary": "Recipe database",
-    "repository": "https://github.com/user/project.git",
+    "summary": "UI for Recipe DB backend",
+    "repository": "https://github.com/jorisgillis/rdb-elm.git",
     "license": "GPLv3",
     "source-directories": [
         "."
@@ -9,13 +9,12 @@
     "exposed-modules": [],
     "dependencies": {
         "NoRedInk/elm-decode-pipeline": "3.0.0 <= v < 4.0.0",
-        "debois/elm-mdl": "8.0.0 <= v < 9.0.0",
-        "elm-lang/core": "5.0.0 <= v < 6.0.0",
+        "elm-lang/core": "5.1.1 <= v < 6.0.0",
         "elm-lang/html": "2.0.0 <= v < 3.0.0",
         "elm-lang/http": "1.0.0 <= v < 2.0.0",
-        "elm-lang/navigation": "2.0.1 <= v < 3.0.0",
+        "elm-lang/navigation": "2.1.0 <= v < 3.0.0",
         "evancz/url-parser": "2.0.1 <= v < 3.0.0",
-        "truqu/elm-oauth2": "2.0.3 <= v < 3.0.0"
+        "truqu/elm-oauth2": "2.2.0 <= v < 3.0.0"
     },
     "elm-version": "0.18.0 <= v < 0.19.0"
 }
